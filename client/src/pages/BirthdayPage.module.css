@@ -10,7 +10,7 @@
   padding: clamp(14px, 3vw, 30px) clamp(12px, 3vw, 24px);
   padding-top: clamp(50px, 8vh, 70px);
   padding-bottom: clamp(20px, 4vh, 40px);
-  background: linear-gradient(160deg, #0d0119 0%, #1a0a2e 40%, #3d0a3a 80%, #1a0a2e 100%);
+  background: var(--page-background, linear-gradient(160deg, #0d0119 0%, #1a0a2e 40%, #3d0a3a 80%, #1a0a2e 100%));
 }
 
 .bg {
@@ -25,8 +25,8 @@
 
 .backBtn {
   position: fixed;
-  top: clamp(12px, 2.5vw, 20px);
-  left: clamp(12px, 2.5vw, 20px);
+  top: max(clamp(12px, 2.5vw, 20px), env(safe-area-inset-top));
+  left: max(clamp(12px, 2.5vw, 20px), env(safe-area-inset-left));
   background: rgba(255, 107, 157, 0.15);
   color: var(--accent);
   border: 1px solid rgba(255, 107, 157, 0.3);
@@ -124,24 +124,12 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  animation: pulseBorder 2s ease-in-out infinite;
   touch-action: manipulation;
   text-align: center;
 }
 
-@keyframes pulseBorder {
-  0%, 100% { border-color: rgba(255, 107, 157, 0.4); box-shadow: 0 0 20px rgba(255, 107, 157, 0.2); }
-  50% { border-color: rgba(255, 107, 157, 0.9); box-shadow: 0 0 40px rgba(255, 107, 157, 0.5); }
-}
-
 .btnEmoji {
   font-size: clamp(2rem, 7vw, 3rem);
-  animation: bounce 1.2s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
 }
 
 .cakeWrapper {
@@ -166,10 +154,7 @@
   border: 3px solid rgba(255, 107, 157, 0.3);
   border-top-color: var(--primary);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
 }
-
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ===== Action buttons ===== */
 .actionArea {
@@ -249,6 +234,22 @@
   top: -5%;
 }
 
+.heartSparkLayer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.heartSpark {
+  position: absolute;
+  color: #ff8bb7;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(255, 107, 157, 0.95), 0 0 20px rgba(255, 215, 0, 0.65);
+  will-change: transform, opacity;
+}
+
 /* ===========================
    RESPONSIVE BREAKPOINTS
    =========================== */
@@ -284,4 +285,58 @@
     box-shadow: 0 0 50px rgba(255, 107, 157, 0.5);
   }
   .actionBtn:hover { transform: translateY(-2px); }
+}
+
+/* Fit the cake and its controls inside one visible viewport. */
+.page {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding-left: max(clamp(12px, 3vw, 24px), env(safe-area-inset-left));
+  padding-right: max(clamp(12px, 3vw, 24px), env(safe-area-inset-right));
+  padding-top: max(clamp(42px, 7vh, 60px), env(safe-area-inset-top));
+  padding-bottom: max(clamp(8px, 2vh, 18px), env(safe-area-inset-bottom));
+}
+
+.content {
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: clamp(4px, 1vh, 10px);
+}
+
+.header { flex-shrink: 0; }
+.statusMessage { flex-shrink: 0; }
+.cakeArea { flex: 1 1 0; min-height: 0; width: 100%; max-width: min(700px, 100%); margin-inline: auto; display: grid; place-items: center; }
+.cakeWrapper { position: relative; width: min(100%, 700px); max-width: 700px; height: 100%; min-height: 0; margin-inline: auto; display: grid; place-items: center; transform-origin: center center; }
+.cakeWrapper > div { position: relative; width: 100% !important; max-width: 700px; height: clamp(200px, 48vh, 460px) !important; max-height: 50vh !important; margin: 0 auto; transform-origin: center center; }
+.cakeWrapper canvas { display: block; width: 100% !important; height: 100% !important; margin-inline: auto; }
+.actionArea { min-height: clamp(48px, 8vh, 64px); flex-shrink: 0; }
+
+@media (max-height: 500px) {
+  .page { padding-top: max(38px, env(safe-area-inset-top)); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .content { gap: 3px; }
+  .cakeWrapper > div { height: 34vh !important; max-height: 36vh !important; }
+  .bigName { font-size: clamp(1.5rem, min(8vw, 8vh), 3rem); }
+  .nameLabel { font-size: clamp(0.9rem, 4.5vh, 1.2rem); }
+  .divider { font-size: clamp(0.8rem, 4vh, 1.1rem); margin-top: 2px; }
+  .statusMessage { font-size: clamp(0.78rem, 2.5vw, 1rem); line-height: 1.2; }
+  .revealBtn { gap: 4px; padding: clamp(10px, 4vh, 18px) clamp(18px, 5vw, 34px); font-size: clamp(0.82rem, 2.6vw, 1rem); }
+  .btnEmoji { font-size: clamp(1.4rem, 6vh, 2rem); }
+  .actionArea { min-height: 46px; }
+}
+
+@media (max-width: 480px) {
+  .cakeWrapper > div { height: min(44vh, 86vw) !important; max-height: 44vh !important; transform: scale(0.94); }
+  .bigName { font-size: clamp(1.55rem, min(8vw, 5.5vh), 4.5rem); }
+}
+
+@media (max-width: 480px) and (max-height: 500px) {
+  .cakeWrapper > div { height: min(34vh, 86vw) !important; max-height: 36vh !important; transform: scale(0.92); }
+}
+
+@media (max-height: 640px) {
+  .content { gap: clamp(3px, 0.8vh, 7px); }
+  .statusMessage { min-height: 0; }
 }

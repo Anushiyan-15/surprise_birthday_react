@@ -23,7 +23,7 @@ router.post('/login', (req, res) => {
 
   const isValid = bcrypt.compareSync(password, admin.password);
   if (!isValid) {
-    return res.status(401).json({ error: 'Invalid passwordcd ' });
+    return res.status(401).json({ error: 'Invalid password' });
   }
 
   const token = jwt.sign(

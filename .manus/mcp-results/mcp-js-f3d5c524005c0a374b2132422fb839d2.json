@@ -1,0 +1,8 @@
+In-app Browser JS state was preserved. Completed actions were not rolled back; refresh stale UI handles and continue only the remaining work.
+{"code":"NAVIGATION_INTERRUPTED","method":"browser_open_tab","callIndex":1,"nextAction":"inspect_before_retry"}
+ERROR NAVIGATION_INTERRUPTED
+The connection was interrupted. Retry navigation before retrying page actions; do not automatically resubmit form data.
+{"control":{"documentRevision":"rev_4f7e8a2d-ac41-4ab3-9bf8-d60389ccd646","error":{"code":"NAVIGATION_INTERRUPTED","retryable":true},"requiresSnapshot":false,"status":"error","tabId":"tab_087a55ff-da33-45ee-9655-4e4dae18572d"},"kind":"error","page":{"contentTrust":"untrusted","url":"http://127.0.0.1:5173/memories"},"schema":"manus.browser/v1","warnings":["ERR_CONNECTION_TIMED_OUT (-118)"]}
+ERROR NAVIGATION_INTERRUPTED
+The connection was interrupted. Retry navigation before retrying page actions; do not automatically resubmit form data.
+{"control":{"documentRevision":"rev_4f7e8a2d-ac41-4ab3-9bf8-d60389ccd646","error":{"code":"NAVIGATION_INTERRUPTED","retryable":true},"requiresSnapshot":false,"status":"error","tabId":"tab_087a55ff-da33-45ee-9655-4e4dae18572d"},"kind":"error","page":{"contentTrust":"untrusted","url":"http://127.0.0.1:5173/memories"},"schema":"manus.browser/v1","warnings":["ERR_CONNECTION_TIMED_OUT (-118)"]}
