@@ -104,6 +104,7 @@ function HeartMesh() {
       bevelThickness: 0.12, bevelSize: 0.12, bevelSegments: 6
     }
     const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings)
+    geo.rotateZ(Math.PI)
     geo.computeBoundingBox()
     const bb = geo.boundingBox
     const cx = -(bb.max.x + bb.min.x) / 2

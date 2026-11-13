@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { ThreeMotion, ThreeAnimatePresence } from '../../components/ThreeAnimationSystem'
 import useStore from '../../store/useStore'
 import styles from './AdminDashboard.module.css'
 
@@ -19,14 +19,14 @@ function Toast({ message, type, onClose }) {
   }, [])
 
   return (
-    <motion.div
+    <ThreeMotion.div
       className={`${styles.toast} ${type === 'success' ? styles.toastSuccess : styles.toastError}`}
       initial={{ opacity: 0, x: 60 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 60 }}
     >
       {type === 'success' ? '✅' : '❌'} {message}
-    </motion.div>
+    </ThreeMotion.div>
   )
 }
 
@@ -321,20 +321,20 @@ function MemoriesTab({ memories, showToast }) {
       </div>
 
       {/* Form */}
-      <AnimatePresence>
+      <ThreeAnimatePresence>
         {showForm && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <ThreeMotion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <MemoryForm
               onSave={handleCreate}
               onCancel={() => setShowForm(false)}
               uploading={uploading}
               onUpload={handleUpload}
             />
-          </motion.div>
+          </ThreeMotion.div>
         )}
 
         {editing && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <ThreeMotion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <MemoryForm
               memory={editing}
               onSave={handleUpdate}
@@ -342,9 +342,9 @@ function MemoriesTab({ memories, showToast }) {
               uploading={uploading}
               onUpload={handleUpload}
             />
-          </motion.div>
+          </ThreeMotion.div>
         )}
-      </AnimatePresence>
+      </ThreeAnimatePresence>
 
       {/* Memory list */}
       {!showForm && !editing && (
@@ -387,16 +387,16 @@ function MemoriesTab({ memories, showToast }) {
       )}
 
       {/* Delete confirm */}
-      <AnimatePresence>
+      <ThreeAnimatePresence>
         {confirmDelete && (
-          <motion.div
+          <ThreeMotion.div
             className={styles.modalOverlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setConfirmDelete(null)}
           >
-            <motion.div
+            <ThreeMotion.div
               className={styles.modalCard}
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
@@ -410,10 +410,10 @@ function MemoriesTab({ memories, showToast }) {
                 <button className={styles.cancelBtn} onClick={() => setConfirmDelete(null)}>Cancel</button>
                 <button className={styles.deleteConfirmBtn} onClick={() => handleDelete(confirmDelete)}>Yes, Delete</button>
               </div>
-            </motion.div>
-          </motion.div>
+            </ThreeMotion.div>
+          </ThreeMotion.div>
         )}
-      </AnimatePresence>
+      </ThreeAnimatePresence>
     </div>
   )
 }
@@ -617,11 +617,15 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [toasts, setToasts] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [dashboardLoading, setDashboardLoading] = useState(true)
 
   useEffect(() => {
-    fetchSettings()
-    fetchMemories(true)
-  }, [])
+    let active = true
+    Promise.allSettled([fetchSettings(), fetchMemories(true)]).then(() => {
+      if (active) setDashboardLoading(false)
+    })
+    return () => { active = false }
+  }, [fetchSettings, fetchMemories])
 
   const showToast = (message, type = 'success') => {
     const id = Date.now()
@@ -633,6 +637,38 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     logout()
     navigate('/admin/login')
+  }
+
+  if (dashboardLoading) {
+    return (
+      <ThreeMotion.main
+        className={styles.initializing}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        role="status"
+        aria-live="polite"
+      >
+        <div className={styles.loadingAtmosphere} aria-hidden="true">
+          <span className={styles.loadingOrbOne} />
+          <span className={styles.loadingOrbTwo} />
+          <span className={styles.loadingSparkOne} />
+          <span className={styles.loadingSparkTwo} />
+        </div>
+        <ThreeMotion.div
+          className={styles.loadingEmblem}
+          animate={{ rotateY: [0, 180, 360], y: [0, -5, 0] }}
+          transition={{ rotateY: { duration: 4, repeat: Infinity, ease: 'linear' }, y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } }}
+          aria-hidden="true"
+        >🎂</ThreeMotion.div>
+        <p className={styles.loadingEyebrow}>ADMIN PORTAL</p>
+        <h1 className={styles.loadingTitle}>Welcome Back, Admin!</h1>
+        <p className={styles.loadingMessage}>Preparing Your Dashboard...</p>
+        <div className={styles.loadingIndicator} aria-label="Loading dashboard data">
+          <span /><span /><span />
+        </div>
+        <p className={styles.loadingFootnote}>Gathering your latest birthday details</p>
+      </ThreeMotion.main>
+    )
   }
 
   return (
@@ -691,8 +727,8 @@ export default function AdminDashboard() {
       {/* Main content */}
       <main className={styles.main}>
         <div className={styles.mainContent}>
-          <AnimatePresence mode="wait">
-            <motion.div
+          <ThreeAnimatePresence mode="wait">
+            <ThreeMotion.div
               key={activeTab}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -704,18 +740,18 @@ export default function AdminDashboard() {
               {activeTab === 'memories' && <MemoriesTab memories={memories} showToast={showToast} />}
               {activeTab === 'design' && <DesignTab settings={settings} onSave={updateSettings} showToast={showToast} />}
               {activeTab === 'settings' && <SettingsTab settings={settings} onSave={updateSettings} showToast={showToast} />}
-            </motion.div>
-          </AnimatePresence>
+            </ThreeMotion.div>
+          </ThreeAnimatePresence>
         </div>
       </main>
 
       {/* Toast notifications */}
       <div className={styles.toastContainer}>
-        <AnimatePresence>
+        <ThreeAnimatePresence>
           {toasts.map(t => (
             <Toast key={t.id} message={t.message} type={t.type} onClose={() => removeToast(t.id)} />
           ))}
-        </AnimatePresence>
+        </ThreeAnimatePresence>
       </div>
     </div>
   )

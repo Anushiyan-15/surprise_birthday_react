@@ -8,7 +8,7 @@
   position: relative;
   overflow: hidden;
   padding: clamp(16px, 4vw, 40px);
-  background: linear-gradient(160deg, #0d0119 0%, #1a0a2e 30%, #2d1445 60%, #1a0a2e 100%);
+  background: var(--page-background, linear-gradient(160deg, #0d0119 0%, #1a0a2e 30%, #2d1445 60%, #1a0a2e 100%));
 }
 
 .bg {
@@ -33,12 +33,40 @@
   position: absolute;
   background: white;
   border-radius: 50%;
-  animation: twinkle 3s ease-in-out infinite;
 }
 
-@keyframes twinkle {
-  0%, 100% { opacity: 0.2; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.5); }
+.heartFlowLayer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.floatingHeart {
+  position: absolute;
+  bottom: -30px;
+  color: #ff6b9d;
+  text-shadow: 0 0 10px rgba(255, 107, 157, 0.8), 0 0 22px rgba(255, 215, 0, 0.35);
+  will-change: transform, opacity;
+}
+
+.introSparkLayer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.introSpark {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  color: #ffd700;
+  line-height: 1;
+  text-shadow: 0 0 8px #fff, 0 0 18px #ff6b9d, 0 0 34px #ffd700;
+  will-change: transform, opacity;
 }
 
 /* ===== Main content ===== */
@@ -69,15 +97,6 @@
 
 .loadingPulse {
   font-size: clamp(48px, 12vw, 80px);
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  14% { transform: scale(1.3); }
-  28% { transform: scale(1); }
-  42% { transform: scale(1.15); }
-  70% { transform: scale(1); }
 }
 
 /* ===== Text section ===== */
@@ -129,12 +148,6 @@
   font-size: clamp(1.3rem, 4vw, 1.6rem);
   color: #ffd700;
   text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 107, 157, 0.5);
-  animation: glowPulse 2s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-  0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 107, 157, 0.3); }
-  50% { text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 107, 157, 0.7), 0 0 80px rgba(255, 215, 0, 0.4); }
 }
 
 /* ===== CTA Button ===== */
@@ -161,12 +174,6 @@
 
 .buttonIcon {
   font-size: clamp(1rem, 3vw, 1.3rem);
-  animation: bounce 1.5s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
 }
 
 .scrollHint {
@@ -182,12 +189,7 @@
 }
 
 .scrollArrow {
-  animation: scrollBounce 1.5s ease-in-out infinite;
-}
-
-@keyframes scrollBounce {
-  0%, 100% { transform: translateY(0); opacity: 0.4; }
-  50% { transform: translateY(5px); opacity: 0.8; }
+  opacity: 0.6;
 }
 
 /* ===== Bottom heart strip ===== */
@@ -207,16 +209,7 @@
 .heartRow {
   color: rgba(255, 107, 157, 0.3);
   font-size: clamp(0.7rem, 2vw, 1rem);
-  animation: heartPulse 3s ease-in-out infinite;
   flex-shrink: 0;
-}
-
-.heartRow:nth-child(odd) { animation-delay: 0.5s; }
-.heartRow:nth-child(3n) { animation-delay: 1s; }
-
-@keyframes heartPulse {
-  0%, 100% { color: rgba(255, 107, 157, 0.2); }
-  50% { color: rgba(255, 107, 157, 0.6); }
 }
 
 /* ===========================
@@ -251,4 +244,31 @@
   .content { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px; }
   .textSection { flex: 1; min-width: 240px; }
   .bottomStrip { display: none; }
+}
+
+/* Keep the complete landing experience within the visible screen. */
+.page {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding-left: max(clamp(16px, 4vw, 40px), env(safe-area-inset-left));
+  padding-right: max(clamp(16px, 4vw, 40px), env(safe-area-inset-right));
+  padding-top: max(clamp(8px, 2vh, 20px), env(safe-area-inset-top));
+  padding-bottom: max(clamp(8px, 2vh, 20px), env(safe-area-inset-bottom));
+}
+
+.content { min-height: 0; gap: clamp(4px, 1vh, 10px); }
+.heartSection > div { height: clamp(140px, min(42vh, 78vw), 400px) !important; max-height: 45vh !important; }
+.textSection { gap: clamp(4px, 1vh, 10px); }
+
+@media (max-width: 480px) {
+  .page { justify-content: center; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .page { justify-content: center; padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .heartSection > div { height: clamp(100px, 34vh, 180px) !important; max-height: 38vh !important; }
+  .textSection { gap: 4px; }
+  .title { font-size: clamp(1.45rem, min(5vw, 7vh), 2.6rem); line-height: 1.05; }
 }

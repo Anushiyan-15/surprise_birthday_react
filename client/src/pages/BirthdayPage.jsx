@@ -1,8 +1,8 @@
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import useStore from '../store/useStore'
-import BirthdayCake3D from '../components/BirthdayCake3D'
+import BirthdayCake3D, { TOTAL_CANDLES } from '../components/BirthdayCake3D'
+import { ThreeMotion, ThreeAnimatePresence, threeAnimationBus } from '../components/ThreeAnimationSystem'
 import styles from './BirthdayPage.module.css'
 
 const STEPS = {
@@ -15,82 +15,88 @@ const STEPS = {
   DONE: 'done'
 }
 
-function ConfettiPiece({ x, color, delay }) {
-  return (
-    <motion.div
-      className={styles.confetti}
-      style={{
-        left: `${x}%`,
-        background: color,
-        borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-        width: `${Math.random() * 8 + 6}px`,
-        height: `${Math.random() * 8 + 6}px`,
-      }}
-      initial={{ top: '-5%', rotate: 0, opacity: 1 }}
-      animate={{
-        top: '110%',
-        rotate: 720,
-        opacity: [1, 1, 0.5, 0],
-        x: [0, Math.random() * 100 - 50, Math.random() * 80 - 40]
-      }}
-      transition={{ duration: Math.random() * 2 + 2, delay, ease: 'linear' }}
-    />
-  )
-}
-
-function ConfettiExplosion({ active }) {
-  const COLORS = ['#ff6b9d', '#ffd700', '#f8a5c2', '#00d2d3', '#ff9f43', '#54a0ff', '#5f27cd']
-  const pieces = Array.from({ length: 60 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    color: COLORS[Math.floor(Math.random() * COLORS.length)],
-    delay: Math.random() * 0.5
-  }))
-
-  if (!active) return null
-
-  return (
-    <div className={styles.confettiContainer}>
-      {pieces.map(p => (
-        <ConfettiPiece key={p.id} x={p.x} color={p.color} delay={p.delay} />
-      ))}
-    </div>
-  )
-}
-
 export default function BirthdayPage() {
   const navigate = useNavigate()
   const settings = useStore(s => s.settings)
   const [step, setStep] = useState(STEPS.INTRO)
+  const [litCount, setLitCount] = useState(0)
   const [message, setMessage] = useState('Click to reveal the cake! 🎂')
+
+  const activeTimers = useRef([])
+  const clearAllTimers = () => {
+    activeTimers.current.forEach(t => clearTimeout(t))
+    activeTimers.current = []
+  }
+
+  useEffect(() => {
+    return () => clearAllTimers()
+  }, [])
 
   const name = settings.birthday_person_name || 'My Love'
 
   const handleRevealCake = () => {
+    clearAllTimers()
     setStep(STEPS.APPEARING)
     setMessage('✨ Your cake is appearing...')
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setStep(STEPS.CAKE_READY)
       setMessage('🕯️ Now light the candles!')
     }, 1500)
+    activeTimers.current.push(timer)
   }
 
   const handleLightCandles = () => {
+    clearAllTimers()
+    setLitCount(0)
     setStep(STEPS.LIGHTING)
-    setMessage('🔥 Lighting the candles with love...')
-    setTimeout(() => {
-      setStep(STEPS.LIT)
-      setMessage('Make a wish and blow! 🌬️')
-    }, 2000)
+    setMessage('🕯️ Lighting each candle with love...')
+
+    for (let i = 1; i <= TOTAL_CANDLES; i++) {
+      const timer = setTimeout(() => {
+        setLitCount(i)
+        if (i === TOTAL_CANDLES) {
+          const finishTimer = setTimeout(() => {
+            setStep(STEPS.LIT)
+            setMessage('Make a wish and blow! 🌬️')
+          }, 450)
+          activeTimers.current.push(finishTimer)
+        }
+      }, i * 550)
+      activeTimers.current.push(timer)
+    }
   }
 
   const handleBlowCandles = () => {
+    clearAllTimers()
     setStep(STEPS.BLOWN)
-    setMessage('🎉 Your wish is on its way!')
-    setTimeout(() => {
+    setMessage('💨 She is blowing out your candles...')
+
+    // Trigger 3D celebration confetti across the global Three.js canvas
+    threeAnimationBus.triggerConfetti()
+
+    // Detect all currently lit candles on the cake
+    const countToExtinguish = litCount > 0 ? litCount : TOTAL_CANDLES
+
+    // Synchronized blow extinguishing
+    const blowStart = 1000
+    const interval = Math.min(130, 650 / Math.max(1, countToExtinguish))
+
+    for (let i = 1; i <= countToExtinguish; i++) {
+      const remaining = countToExtinguish - i
+      const timer = setTimeout(() => {
+        setLitCount(remaining)
+      }, blowStart + i * interval)
+      activeTimers.current.push(timer)
+    }
+
+    const totalTime = blowStart + countToExtinguish * interval
+    const doneTimer = setTimeout(() => {
+      setLitCount(0) // GUARANTEED: all candles turn off completely
       setStep(STEPS.DONE)
       setMessage('🌟 Now see our memories together...')
-    }, 2000)
+      threeAnimationBus.triggerConfetti()
+    }, totalTime + 350)
+    activeTimers.current.push(doneTimer)
   }
 
   return (
@@ -98,21 +104,21 @@ export default function BirthdayPage() {
       <div className={styles.bg} />
 
       {/* Back button */}
-      <motion.button
+      <ThreeMotion.button
         className={styles.backBtn}
         onClick={() => navigate('/')}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.3 }}
       >
         ← Back
-      </motion.button>
+      </ThreeMotion.button>
 
       <div className={styles.content}>
         {/* Header */}
-        <motion.div
+        <ThreeMotion.div
           className={styles.header}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -122,104 +128,105 @@ export default function BirthdayPage() {
           <h1 className={styles.bigName}>{name}</h1>
           <div className={styles.divider}>
             {['❤️', '✨', '🌟', '✨', '❤️'].map((e, i) => (
-              <span key={i}>{e}</span>
+              <ThreeMotion.span key={i} pulse={{ frequency: 2 + i * 0.4, amplitude: 0.08 }}>{e}</ThreeMotion.span>
             ))}
           </div>
-        </motion.div>
+        </ThreeMotion.div>
 
         {/* Status message */}
-        <AnimatePresence mode="wait">
-          <motion.p
+        <ThreeAnimatePresence mode="wait">
+          <ThreeMotion.p
             key={message}
             className={styles.statusMessage}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4 }}
           >
             {message}
-          </motion.p>
-        </AnimatePresence>
+          </ThreeMotion.p>
+        </ThreeAnimatePresence>
 
         {/* Cake area */}
         <div className={styles.cakeArea}>
-          <AnimatePresence>
+          <ThreeAnimatePresence>
             {step === STEPS.INTRO && (
-              <motion.button
+              <ThreeMotion.button
                 className={styles.revealBtn}
                 onClick={handleRevealCake}
-                whileHover={{ scale: 1.08, boxShadow: '0 15px 50px rgba(255,107,157,0.7)' }}
+                whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.95 }}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
+                pulse={{ frequency: 3, amplitude: 0.03 }}
+                transition={{ duration: 0.6 }}
               >
-                <span className={styles.btnEmoji}>🎂</span>
+                <ThreeMotion.span className={styles.btnEmoji} bounce={{ frequency: 4.5, amplitude: 7 }}>🎂</ThreeMotion.span>
                 <span>Click to Reveal Your Cake</span>
-              </motion.button>
+              </ThreeMotion.button>
             )}
 
             {step !== STEPS.INTRO && (
-              <motion.div
+              <ThreeMotion.div
                 className={styles.cakeWrapper}
                 initial={{ opacity: 0, scale: 0.3, rotateX: -30 }}
                 animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-                transition={{ duration: 1, type: 'spring', stiffness: 80 }}
+                transition={{ duration: 1 }}
               >
                 <Suspense fallback={
                   <div className={styles.cakeLoading}>
-                    <div className={styles.spinner} />
+                    <ThreeMotion.div className={styles.spinner} spin={{ speed: 450 }} />
                     <p>Baking your cake...</p>
                   </div>
                 }>
                   <BirthdayCake3D
-                    candlesLit={[STEPS.LIT, STEPS.BLOWN, STEPS.DONE].includes(step)}
+                    litCount={litCount}
+                    blowing={step === STEPS.BLOWN}
                     showFireworks={[STEPS.BLOWN, STEPS.DONE].includes(step)}
+                    lighting={step === STEPS.LIGHTING}
+                    showGirl={[STEPS.BLOWN, STEPS.DONE].includes(step)}
+                    step={step}
                   />
                 </Suspense>
-              </motion.div>
+              </ThreeMotion.div>
             )}
-          </AnimatePresence>
+          </ThreeAnimatePresence>
         </div>
 
         {/* Action buttons */}
         <div className={styles.actionArea}>
-          <AnimatePresence mode="wait">
+          <ThreeAnimatePresence mode="wait">
             {step === STEPS.CAKE_READY && (
-              <motion.button
+              <ThreeMotion.button
                 key="light"
                 className={`${styles.actionBtn} ${styles.lightBtn}`}
                 onClick={handleLightCandles}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
                 whileHover={{ scale: 1.07 }}
                 whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 200 }}
+                transition={{ duration: 0.4 }}
               >
                 <span>🕯️</span> Light the Candles
-              </motion.button>
+              </ThreeMotion.button>
             )}
 
             {step === STEPS.LIT && (
-              <motion.button
+              <ThreeMotion.button
                 key="blow"
                 className={`${styles.actionBtn} ${styles.blowBtn}`}
                 onClick={handleBlowCandles}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
                 whileHover={{ scale: 1.07 }}
                 whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 200 }}
+                transition={{ duration: 0.4 }}
               >
                 <span>🌬️</span> Make a Wish & Blow!
-              </motion.button>
+              </ThreeMotion.button>
             )}
 
             {step === STEPS.DONE && (
-              <motion.div
+              <ThreeMotion.div
                 key="done"
                 className={styles.doneSection}
                 initial={{ opacity: 0, y: 20 }}
@@ -229,20 +236,19 @@ export default function BirthdayPage() {
                 <p className={styles.wishText}>
                   🌟 May all your wishes come true! 🌟
                 </p>
-                <button
+                <ThreeMotion.button
                   className={`${styles.actionBtn} ${styles.nextBtn}`}
                   onClick={() => navigate('/memories')}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <span>💌</span> See Our Memories
-                </button>
-              </motion.div>
+                </ThreeMotion.button>
+              </ThreeMotion.div>
             )}
-          </AnimatePresence>
+          </ThreeAnimatePresence>
         </div>
       </div>
-
-      {/* Confetti on blow */}
-      <ConfettiExplosion active={[STEPS.BLOWN, STEPS.DONE].includes(step)} />
     </div>
   )
 }
